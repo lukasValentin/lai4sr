@@ -162,3 +162,4 @@ cython_debug/
 # custom
 data/
 run_prosail_planetscope.sh
+run_prosail_sentinel2.sh
