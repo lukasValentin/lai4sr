@@ -34,7 +34,7 @@ rtm_config = RTMConfig(
 logger = get_settings().logger
 
 
-def run_prosail_sentinel2(path: Path):
+def run_prosail_sentinel2(path: Path) -> None:
     """
     Run PROSAIL forward simulations for each scene in
     the PlanetScope dataset
@@ -75,7 +75,7 @@ def run_prosail_sentinel2(path: Path):
                     lut_params=rtm_config.lut_params,
                     remove_invalid_green_peaks=True,
                     sampling_method='frs',
-                    lut_size=100,
+                    lut_size=50000,
                     **angles)
                 # drop NaNs in the LUT
                 lut = lut.dropna()
