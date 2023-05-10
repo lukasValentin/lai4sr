@@ -5,10 +5,33 @@ by Graf et al. (2023, under review).
 """
 
 from eodal.config import get_settings
+from eodal.metadata.sentinel2.parsing import parse_MTD_TL
 from pathlib import Path
 
 from rtm_inv.core.config import RTMConfig
 from rtm_inv.core.lookup_table import generate_lut
+
+
+# metadata entries to be extracted from the xml file
+s2_angle_mapping = {
+    'SENSOR_ZENITH_ANGLE': 'viewing_zenith_angle',
+    'SENSOR_AZIMUTH_ANGLE': 'viewing_azimuth_angle',
+    'SUN_AZIMUTH_ANGLE': 'solar_azimuth_angle',
+    'SUN_ZENITH_ANGLE': 'solar_zenith_angle'
+}
+# platform mapping
+s2_platform_mapping = {
+    'S2A': 'Sentinel2A',
+    'S2B': 'Sentinel2B'}
+
+# set up the RTM configuration
+rtm_config = RTMConfig(
+    traits=['lai'],
+    lut_params=Path('prosail_parameters.csv'),
+    rtm='prosail')
+
+# set up the logger
+logger = get_settings().logger
 
 
 def run_prosail_sentinel2(path: Path):
@@ -37,12 +60,34 @@ def run_prosail_sentinel2(path: Path):
                     continue
                 # read the metadata
                 metadata = metadata_dir / (scene.stem + '.xml')
+                # parse the metadata
+                metadata_df = parse_MTD_TL(str(metadata))
+                angles = {}
+                for s2_angle in s2_angle_mapping.items():
+                    angles[s2_angle[1]] = float(
+                        metadata_df[s2_angle[0]])
+                # check the sensor
+                sensor = metadata_df['SCENE_ID'].split('_')[0]
+                platform = s2_platform_mapping[sensor]
+                # run the PROSAIL forward simulation
+                lut = generate_lut(
+                    sensor=platform,
+                    lut_params=rtm_config.lut_params,
+                    remove_invalid_green_peaks=True,
+                    sampling_method='frs',
+                    lut_size=100,
+                    **angles)
+                # drop NaNs in the LUT
+                lut = lut.dropna()
+                # save the LUT as pickle
+                lut.to_pickle(lut_file)
+                logger.info(f'Processed {folder.name}: {scene.name}')
 
 
 if __name__ == '__main__':
 
     year = 2022
     # path to the PlanetScope dataset
-    path = Path('data/sentinel2') / str(year)
+    path = Path('data/sentinel') / str(year)
 
     run_prosail_sentinel2(path)
