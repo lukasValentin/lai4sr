@@ -4,6 +4,8 @@ using the `rtm_inv` subpackage using the parameters suggested
 by Graf et al. (2023, under review).
 """
 
+import shutil
+
 from eodal.config import get_settings
 from pathlib import Path
 from typing import Any, Dict
@@ -86,7 +88,14 @@ def run_prosail_planetscope(path: Path):
                     continue
                 # read the metadata
                 metadata = metadata_dir / (scene.stem + '.xml')
-                angles = parse_metadata_xml(metadata)
+                try:
+                    angles = parse_metadata_xml(metadata)
+                except Exception as e:
+                    logger.error(f'Could not parse {metadata}: {e}')
+                    errored_xml_dir = metadata_dir / 'errored_xml'
+                    errored_xml_dir.mkdir(exist_ok=True)
+                    shutil.move(metadata, errored_xml_dir)
+                    continue
                 angles['solar_zenith_angle'] = 90 - angles['sun_elevation']
                 del angles['sun_elevation']
                 # run the PROSAIL forward simulation
