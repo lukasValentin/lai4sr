@@ -70,7 +70,8 @@ def lai_retrieval_planetscope(path: Path) -> None:
                 sim_refl = lut[ps_bands].values
                 # read the observed reflectance data
                 rc = RasterCollection.from_multi_band_raster(scene)
-                obs_refl = rc.get_values()
+                obs_refl = rc.get_values().astype(float)
+                obs_refl *= 0.0001  # convert to reflectance [0, 1]
                 # the actual inversion
                 mask = obs_refl[0, :, :] == 0.
                 lut_idxs, cost_function_values = inv_img(
