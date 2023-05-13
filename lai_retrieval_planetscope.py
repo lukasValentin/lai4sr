@@ -44,8 +44,27 @@ def lai_retrieval_planetscope(path: Path) -> None:
 
             # loop over the scenes
             for scene in data_dir.glob('*.tif'):
+
+                # skip if the scene is already processed
+                fpath_lai = lai_dir / (scene.stem + '_lai.tif')
+                if fpath_lai.exists():
+                    logger.info(f'Skipping {scene.name}')
+                    continue
+
                 # find the corresponding LUT
                 lut_file = lut_dir / (scene.stem + '.pkl')
+                # raise a warning if the LUT is not found
+                if not lut_file.exists():
+                    logger.warning(
+                        f'No LUT found for {folder.name}: {scene.name}')
+                    errored_scenes_dir = lai_dir / 'errored_scenes'
+                    errored_scenes_dir.mkdir(exist_ok=True)
+                    with open(
+                        errored_scenes_dir /
+                            'errored_scenes.txt', 'a') as f:
+                        f.write(f'{scene.name}\n')
+                    continue
+
                 lut = pd.read_pickle(lut_file)
                 # get the simulated reflectance data
                 sim_refl = lut[ps_bands].values
@@ -94,7 +113,6 @@ def lai_retrieval_planetscope(path: Path) -> None:
                     values=highest_cost_function_vals
                 )
                 # save as GeoTiff
-                fpath_lai = lai_dir / (scene.stem + '_lai.tif')
                 trait_collection.to_rasterio(fpath_lai)
 
                 # save a Quicklook png

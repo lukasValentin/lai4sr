@@ -163,3 +163,4 @@ cython_debug/
 data/
 run_prosail_planetscope.sh
 run_prosail_sentinel2.sh
+lai_retrieval_planetscope.sh
