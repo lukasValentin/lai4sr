@@ -45,6 +45,7 @@ def plot_lai_maps(lai_s2: Path, lai_ps: Path, out_dir: Path) -> None:
     s2 = RasterCollection.from_multi_band_raster(lai_s2)
     ps = RasterCollection.from_multi_band_raster(lai_ps)
     scene = lai_s2.stem.split('_')[0]
+    spatial_res_s2 = lai_s2.stem.split('_')[2]
 
     # plot the LAI maps
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(10, 5),
@@ -55,11 +56,13 @@ def plot_lai_maps(lai_s2: Path, lai_ps: Path, out_dir: Path) -> None:
                        colormap='viridis')
     ps[band_name].plot(ax=ax[1], vmin=0, vmax=8,
                        colormap='viridis')
-    ax[0].set_title(f'Sentinel-2 {band_name}')
-    ax[1].set_title(f'PlanetScope {band_name}')
+    ax[0].set_title(f'Sentinel-2 {band_name.upper()}' +
+                    f' ({spatial_res_s2})')
+    ax[1].set_title(f'PlanetScope {band_name.upper()}')
 
     # save the plot
-    fname_plot = out_dir / f'{scene}_lai_s2_ps.png'
+    fname_plot = out_dir / \
+        f'{scene}_lai_s2-{spatial_res_s2}_ps.png'
     fig.savefig(fname_plot, dpi=300, bbox_inches='tight')
     plt.close(fig)
 
@@ -68,15 +71,17 @@ if __name__ == '__main__':
 
     # user inputs
     year = '2022'
-    month = '09_sep'
-    scene = '0034'
-    out_dir = Path('analysis/compare_lai_results')
+    month = '09_sep'  # '04_apr', '05_may', or '06_jun'
+    scene = '0058'   # '0000' to '0295
+    spatial_res_s2 = '20m'  # 10m or 20m
+    out_dir = Path('analysis/compare_lai_results')  # ignored by git
     out_dir.mkdir(exist_ok=True, parents=True)
 
     # set the paths to the LAI maps according to the user inputs
     # LUT maps
     lai_s2 = Path(
-        f'data/sentinel/{year}/{month}/lai/{scene}_scene_20m_lai.tif')
+        f'data/sentinel/{year}/{month}/lai/{scene}_scene_' +
+        f'{spatial_res_s2}_lai.tif')
     lai_ps = Path(
         f'data/planetscope/{year}/{month}/lai/{scene}_lai.tif')
 
