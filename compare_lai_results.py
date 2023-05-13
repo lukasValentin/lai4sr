@@ -73,7 +73,7 @@ if __name__ == '__main__':
     year = '2022'
     month = '09_sep'  # '04_apr', '05_may', or '06_jun'
     scene = '0058'   # '0000' to '0295
-    spatial_res_s2 = '20m'  # 10m or 20m
+    spatial_res_s2 = '10m'  # 10m or 20m
     out_dir = Path('analysis/compare_lai_results')  # ignored by git
     out_dir.mkdir(exist_ok=True, parents=True)
 
