@@ -11,7 +11,7 @@ The results are fed into a deep-learning based super-resolution model developed 
 ## Getting started
 
 ### Satellite data
-Download the PlanetScope and Sentinel-2 L2A data (image tiles of size 2 by 2 km), unzip and place them in a folder `data` in the project root.
+Download the PlanetScope and Sentinel-2 L2A data (image tiles of size 2 by 2 km), unzip and place them in a folder `data` in the [scripts](scripts) folder (or anywhere else; in this case you have to change the paths in the scripts!).
 
 - [Download Sentinel-2 data](https://polybox.ethz.ch/index.php/s/f3A3sP40G3MKvBJ)
 - [Download PlanetScope data](https://polybox.ethz.ch/index.php/s/1n5zC3CZGd4ECBQ)
@@ -29,11 +29,11 @@ pip install -r requirements.txt
 The scripts must be executed in the order outlined below to retrieve LAI values:
 
 1. Run PROSAIL simulations to generate the lookup-tables for the single Sentinel-2 and Planet SuperDove scenes to account for the viewing and illumination geometries.
-   - for Sentinel-2: [run_prosail_sentinel2.py](run_prosail_sentinel2.py)
-   - for PlanetScope: [run_prosail_planetscope.py](run_prosail_planetscope.py)
+   - for Sentinel-2: [run_prosail_sentinel2.py](scripts/run_prosail_sentinel2.py)
+   - for PlanetScope: [run_prosail_planetscope.py](scripts/run_prosail_planetscope.py)
 2. Invert the Sentinel-2 and PlanetScope scenes using the lookup-tables calculated in step 1:
-   - for Sentinel-2: [lai_retrieval_sentinel2.py](lai_retrieval_sentinel2.py)
-   - for PlanetScope: [lai_retrieval_planetscope.py](lai_retrieval_planetscope.py)
+   - for Sentinel-2: [lai_retrieval_sentinel2.py](scripts/lai_retrieval_sentinel2.py)
+   - for PlanetScope: [lai_retrieval_planetscope.py](scripts/lai_retrieval_planetscope.py)
    - in the case of Sentinel-2, two results will be generated per scene:
       - one LAI result using the Sentinel-2 10 m bands only (B02, B03, B04, B08)
       - one LAI result using the Sentinel-2 20 m bands only (B05, B06, B07, B8A, B11, B12)
@@ -47,3 +47,10 @@ The `results` are placed in the data folder organized
          | lut -> here you find the PROSAIL lookup tables
 ```
 
+## License
+
+Please refer to our [license agreement](LICENSE).
+
+## Please note
+
+All scripts were developed and run under Linux Fedora 35 using Python 3.10. They *might* run under different operating systems and Python versions but that's neither guaranteed nor tested.
