@@ -196,9 +196,13 @@ def lai_retrieval_planetscope(
 
 if __name__ == '__main__':
 
+    import os
+    cwd = Path(__file__).parent.absolute()
+    os.chdir(cwd)
+
     year = 2022
     # Set the path to the data
-    path = Path('data/planetscope') / str(year)
+    path = Path('../data/planetscope') / str(year)
 
     # by default, this use the 4 bands that are compatible with
     # Sentinel-2 10 m bands
