@@ -28,26 +28,64 @@ from eodal.config import get_settings
 from eodal.core.band import Band
 from eodal.core.raster import RasterCollection
 from pathlib import Path
+from typing import Optional
 
 from rtm_inv.core.inversion import inv_img, retrieve_traits
 
+
 # Bands to use for the LAI retrieval
-ps_bands = [
-    'B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8'
-]
+# all eight bands of PlanetScope
+ps_8bands = {
+    'B1': 'coastal_blue',
+    'B2': 'blue',
+    'B3': 'green_i',
+    'B4': 'green',
+    'B5': 'yellow',
+    'B6': 'red',
+    'B7': 'red_edge',
+    'B8': 'nir'}
+# 4 bands compatabile with Sentinel-2 10 m bands
+ps_4bands = {
+    'B2': 'blue',
+    'B4': 'green',
+    'B6': 'red',
+    'B8': 'nir'}
 logger = get_settings().logger
 
 
-def lai_retrieval_planetscope(path: Path) -> None:
+def lai_retrieval_planetscope(
+        path: Path,
+        four_or_eight_bands: Optional[str] = 'four') -> None:
     """
     Run the LAI retrieval for PlanetScope data.
+
+    Retrieval is either done for all 8 bands and for those
+    4 bands that are compatible with Sentinel-2 10 m bands.
 
     Parameters
     ----------
     path : Path
         Path to the PlanetScope reflectance data
         and lookup-tables with PROSAIL simulations
+    four_or_eight_bands : Optional[str]
+        Either 'four' or 'eight' to indicate whether
+        the retrieval should be done for 4 or 8 bands.
+        Default is 'four'.
     """
+    # check the input
+    if four_or_eight_bands not in ['four', 'eight']:
+        raise ValueError(
+            f'four_or_eight_bands must be either "four" or "eight", '
+            f'but is {four_or_eight_bands}')
+
+    # determine the lai settings
+    if four_or_eight_bands == 'four':
+        ps_bands = ps_4bands
+        lai_file_prefix = 'lai_4bands'
+    else:
+        ps_bands = ps_8bands
+        lai_file_prefix = 'lai_8bands'
+
     # loop over the folders. Jump into a folder if it starts
     # with two digits followed by an underscore and three letters
     for folder in path.iterdir():
@@ -64,7 +102,8 @@ def lai_retrieval_planetscope(path: Path) -> None:
             for scene in data_dir.glob('*.tif'):
 
                 # skip if the scene is already processed
-                fpath_lai = lai_dir / (scene.stem + '_lai.tif')
+                fpath_lai = lai_dir / \
+                    (scene.stem + f'_{lai_file_prefix}.tif')
                 if fpath_lai.exists():
                     logger.info(f'Skipping {scene.name}')
                     continue
@@ -85,10 +124,11 @@ def lai_retrieval_planetscope(path: Path) -> None:
 
                 lut = pd.read_pickle(lut_file)
                 # get the simulated reflectance data
-                sim_refl = lut[ps_bands].values
+                sim_refl = lut[list(ps_bands.keys())].values
                 # read the observed reflectance data
                 rc = RasterCollection.from_multi_band_raster(scene)
-                obs_refl = rc.get_values().astype(float)
+                obs_refl = rc.get_values(
+                    band_selection=list(ps_bands.values())).astype(float)
                 obs_refl *= 0.0001  # convert to reflectance [0, 1]
                 # the actual inversion
                 mask = obs_refl[0, :, :] == 0.
@@ -145,7 +185,8 @@ def lai_retrieval_planetscope(path: Path) -> None:
                     fontsize=18
                 )
                 ax.set_title('')
-                fpath_lai_plot = lai_dir / (scene.stem + '_lai.png')
+                fpath_lai_plot = lai_dir / \
+                    (scene.stem + f'_{lai_file_prefix}.png')
                 f.savefig(fpath_lai_plot, dpi=300)
                 plt.close(f)
 
@@ -159,4 +200,6 @@ if __name__ == '__main__':
     # Set the path to the data
     path = Path('data/planetscope') / str(year)
 
+    # by default, this use the 4 bands that are compatible with
+    # Sentinel-2 10 m bands
     lai_retrieval_planetscope(path)
