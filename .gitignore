@@ -166,3 +166,4 @@ run_prosail_sentinel2.sh
 lai_retrieval_planetscope.sh
 lai_retrieval_sentinel2.sh
 analysis/
+prepare_field_polygons.sh
