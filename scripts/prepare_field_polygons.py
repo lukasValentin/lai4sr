@@ -46,6 +46,9 @@ def main(sat_data_dir: Path, fpath_parcels: Path, year: int) -> None:
     # loop over directories in sat_data_dir
     for sat_dir in sat_data_dir.iterdir():
         sat_dir_year = sat_dir / str(year)
+        if not sat_dir_year.exists():
+            continue
+
         # output directory for clipped parcel polygons
         output_dir_parcels = sat_dir_year.joinpath('parcels')
         output_dir_parcels.mkdir(parents=True, exist_ok=True)
@@ -67,6 +70,10 @@ def main(sat_data_dir: Path, fpath_parcels: Path, year: int) -> None:
 
                 print(f'Clipped parcel polygons for {fpath_scene.stem}')
 
+            # we don't need to loop over the other months
+            # because the parcels are the same for each month
+            break
+
 
 if __name__ == '__main__':
 
@@ -77,4 +84,8 @@ if __name__ == '__main__':
 
     sat_data_dir = Path('data')
 
-    main(sat_data_dir, fpath_parcels, year)
+    main(
+        sat_data_dir=sat_data_dir,
+        fpath_parcels=fpath_parcels,
+        year=year
+    )
