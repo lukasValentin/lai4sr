@@ -78,7 +78,7 @@ def entropy(x: np.ma.MaskedArray) -> float:
 def parcel_statistics(
         data_dir: Path,
         year: int
-        ):
+) -> None:
     """
     Calculate the coefficient of variation, entropy and other
     statistical measures for each parcel
@@ -117,21 +117,25 @@ def parcel_statistics(
                 gdf.to_crs(lai.crs, inplace=True)
 
                 # calculate the statistics
-                lai_stats = lai.reduce(
-                    by=gdf,
-                    method=['median', 'count', 'mean', 'min', 'max',
-                            'percentile_10', 'percentile_90', 'std',
-                            entropy, coefficient_of_variation])
-                # convert to GeoDataFrame
-                gdf_stats = gpd.GeoDataFrame(
-                   lai_stats, geometry='geometry', crs=lai.crs)
-                # drop the CRS column
-                gdf_stats.drop(columns=['crs'], inplace=True)
+                try:
+                    lai_stats = lai.reduce(
+                        by=gdf,
+                        method=['median', 'count', 'mean', 'min', 'max',
+                                'percentile_10', 'percentile_90', 'std',
+                                entropy, coefficient_of_variation])
+                    # convert to GeoDataFrame
+                    gdf_stats = gpd.GeoDataFrame(
+                        lai_stats, geometry='geometry', crs=lai.crs)
+                    # drop the CRS column
+                    gdf_stats.drop(columns=['crs'], inplace=True)
 
-                # save the statistics
-                fpath_stats = lai_dir.joinpath(
-                    fpath_lai.stem + '_parcel_stats.gpkg')
-                gdf_stats.to_file(fpath_stats, driver='GPKG')
+                    # save the statistics
+                    fpath_stats = lai_dir.joinpath(
+                        fpath_lai.stem + '_parcel_stats.gpkg')
+                    gdf_stats.to_file(fpath_stats, driver='GPKG')
+                except Exception as e:
+                    print(e)
+                    continue
 
 
 if __name__ == '__main__':
