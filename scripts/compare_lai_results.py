@@ -51,6 +51,7 @@ def plot_lai_maps(lai_s2: Path, lai_ps: Path, out_dir: Path) -> None:
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(10, 5),
                            sharey=True, sharex=True)
     band_name = 'lai'
+    ps_bands = lai_ps.stem.split('_')[-1]
 
     s2[band_name].plot(ax=ax[0], vmin=0, vmax=8,
                        colormap='viridis')
@@ -58,11 +59,11 @@ def plot_lai_maps(lai_s2: Path, lai_ps: Path, out_dir: Path) -> None:
                        colormap='viridis')
     ax[0].set_title(f'Sentinel-2 {band_name.upper()}' +
                     f' ({spatial_res_s2})')
-    ax[1].set_title(f'PlanetScope {band_name.upper()}')
+    ax[1].set_title(f'PlanetScope {band_name.upper()} ({ps_bands})')
 
     # save the plot
     fname_plot = out_dir / \
-        f'{scene}_lai_s2-{spatial_res_s2}_ps.png'
+        f'{scene}_lai_s2-{spatial_res_s2}_ps_{ps_bands}.png'
     fig.savefig(fname_plot, dpi=300, bbox_inches='tight')
     plt.close(fig)
 
@@ -71,19 +72,29 @@ if __name__ == '__main__':
 
     # user inputs
     year = '2022'
-    month = '09_sep'  # '04_apr', '05_may', or '06_jun'
-    scene = '0058'   # '0000' to '0295
-    spatial_res_s2 = '10m'  # 10m or 20m
+    months = ['04_apr', '05_may', '06_jun', '09_sep']
+    spatial_resolutions_s2 = ['10m', '20m']
+    ps_bands = ['8bands', '4bands']
     out_dir = Path('analysis/compare_lai_results')  # ignored by git
     out_dir.mkdir(exist_ok=True, parents=True)
 
     # set the paths to the LAI maps according to the user inputs
     # LUT maps
-    lai_s2 = Path(
-        f'data/sentinel/{year}/{month}/lai/{scene}_scene_' +
-        f'{spatial_res_s2}_lai.tif')
-    lai_ps = Path(
-        f'data/planetscope/{year}/{month}/lai/{scene}_lai.tif')
-
-    # plot the LAI values
-    plot_lai_maps(lai_s2=lai_s2, lai_ps=lai_ps, out_dir=out_dir)
+    for month in months:
+        month_dir_s2 = Path(f'data/sentinel/{year}/{month}/lai')
+        month_dir_ps = Path(f'data/planetscope/{year}/{month}/lai')
+        out_dir_month = out_dir / month
+        out_dir_month.mkdir(exist_ok=True, parents=True)
+        for spatial_res_s2 in spatial_resolutions_s2:
+            for s2_scene in month_dir_s2.glob(f'*_{spatial_res_s2}_lai.tif'):
+                scene = s2_scene.stem.split('_')[0]
+                lai_s2 = s2_scene
+                for ps_band in ps_bands:
+                    lai_ps = month_dir_ps / f'{scene}_lai_{ps_band}.tif'
+                    if not lai_ps.exists():
+                        continue
+                    # plot the LAI values
+                    plot_lai_maps(
+                        lai_s2=lai_s2,
+                        lai_ps=lai_ps,
+                        out_dir=out_dir_month)
