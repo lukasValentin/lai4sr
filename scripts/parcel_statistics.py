@@ -22,8 +22,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import geopandas as gpd
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import warnings
 
 from eodal.core.raster import RasterCollection
@@ -94,10 +96,6 @@ def compute_parcel_statistics(
     """
     # loop over directories in sat_data_dir
     for sat_dir in data_dir.iterdir():
-        platform = sat_dir.name
-        # TODO: remove this
-        if platform != 'planetscope':
-            continue
         sat_dir_year = sat_dir / str(year)
         if not sat_dir_year.exists():
             continue
@@ -145,12 +143,13 @@ def compute_parcel_statistics(
                     continue
 
 
-def analyze_parcel_statistics(
+def get_parcel_statistics(
         data_dir: Path,
         year: int
-):
+) -> None:
     """
-    Analyze the parcel statistics.
+    Collect the parcel statistics and save them into
+    a single file per plaform (PlanetScope and Sentinel2).
 
     Parameters
     ----------
@@ -195,10 +194,118 @@ def analyze_parcel_statistics(
         print(f'Platform: {platform} ({year}) --> done')
 
 
+def compare_planetscope_lai(
+        fpath_planetscope: Path,
+        out_dir: Path
+) -> None:
+    """
+    Compare PlanetScope 4 and 8 band LAI retrievals.
+
+    Parameters
+    ----------
+    fpath_planetscope : Path
+        Path to the PlanetScope LAI retrieval.
+    out_dir : Path
+        Path to the output directory.
+    """
+    # read the file
+    gdf = gpd.read_file(fpath_planetscope)
+    # plot the coefficient of variation and the entropy
+    # by config using seaborn
+    sns.set_theme(style="whitegrid")
+    sns.set_context("paper")
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    sns.boxplot(x='config', y='coefficient_of_variation',
+                data=gdf, ax=ax[0], order=['4bands', '8bands'])
+    sns.boxplot(x='config', y='entropy',
+                data=gdf, ax=ax[1], order=['4bands', '8bands'])
+    fig.suptitle(f'PlanetScope 4 and 8 band LAI retrievals (N={gdf.shape[0]})')
+    plt.tight_layout()
+    fig.savefig(out_dir.joinpath('boxplots.png'), dpi=300)
+    plt.close(fig)
+
+    # loop over the months and do the same plots per month
+    for month in gdf['month'].unique():
+        fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+        sns.boxplot(x='config', y='coefficient_of_variation',
+                    data=gdf[gdf['month'] == month], ax=ax[0],
+                    order=['4bands', '8bands'])
+        sns.boxplot(x='config', y='entropy',
+                    data=gdf[gdf['month'] == month], ax=ax[1],
+                    order=['4bands', '8bands'])
+        fig.suptitle(
+            f'PlanetScope 4 and 8 band LAI retrievals ({month})\n' +
+            f'N = {gdf[gdf["month"] == month].shape[0]} parcels')
+        plt.tight_layout()
+        fig.savefig(out_dir.joinpath(f'boxplots_{month}.png'), dpi=300)
+        plt.close(fig)
+
+
+def compare_sentinel2_lai(
+        fpath_sentinel2: Path,
+        out_dir: Path
+) -> None:
+    """
+    Compare Sentinel2 10 and 20 m LAI retrievals.
+
+    Parameters
+    ----------
+    fpath_sentinel2 : Path
+        Path to the Sentinel2 LAI retrieval.
+    out_dir : Path
+        Path to the output directory.
+    """
+    # read the file
+    gdf = gpd.read_file(fpath_sentinel2)
+    # plot the coefficient of variation and the entropy
+    # by config using seaborn
+    sns.set_theme(style="whitegrid")
+    sns.set_context("paper")
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    sns.boxplot(x='config', y='coefficient_of_variation',
+                data=gdf, ax=ax[0], order=['10m', '20m'])
+    sns.boxplot(x='config', y='entropy',
+                data=gdf, ax=ax[1], order=['10m', '20m'])
+    fig.suptitle(f'Sentinel2 10 and 20 m LAI retrievals (N={gdf.shape[0]})')
+    plt.tight_layout()
+    fig.savefig(out_dir.joinpath('boxplots.png'), dpi=300)
+    plt.close(fig)
+
+    # loop over the months and do the same plots per month
+    for month in gdf['month'].unique():
+        fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+        sns.boxplot(x='config', y='coefficient_of_variation',
+                    data=gdf[gdf['month'] == month], ax=ax[0],
+                    order=['10m', '20m'])
+        sns.boxplot(x='config', y='entropy',
+                    data=gdf[gdf['month'] == month], ax=ax[1],
+                    order=['10m', '20m'])
+        fig.suptitle(
+            f'Sentinel2 10 and 20 m LAI retrievals ({month})\n' +
+            f'N = {gdf[gdf["month"] == month].shape[0]} parcels')
+        plt.tight_layout()
+        fig.savefig(out_dir.joinpath(f'boxplots_{month}.png'), dpi=300)
+        plt.close(fig)
+
+
 if __name__ == '__main__':
 
     year = 2022
     data_dir = Path('data')
 
+    # compute the statistics
     # compute_parcel_statistics(data_dir, year)
-    analyze_parcel_statistics(data_dir, year)
+
+    # and put them together
+    # get_parcel_statistics(data_dir, year)
+
+    # compare PlanetScope 4 and 8 band LAI retrievals
+    fpath_planetscope = Path('data/planetscope/2022/parcel_statistics.gpkg')
+    out_dir = Path('analysis/planetscope_4_vs_8_bands')
+    compare_planetscope_lai(fpath_planetscope, out_dir)
+
+    # compare Sentinel2 10 and 20 m LAI retrievals
+    fpath_sentinel2 = Path('data/sentinel/2022/parcel_statistics.gpkg')
+    out_dir = Path('analysis/sentinel2_10_vs_20_m')
+    out_dir.mkdir(exist_ok=True, parents=True)
+    compare_sentinel2_lai(fpath_sentinel2, out_dir)
