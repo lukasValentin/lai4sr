@@ -294,10 +294,10 @@ if __name__ == '__main__':
     data_dir = Path('data')
 
     # compute the statistics
-    # compute_parcel_statistics(data_dir, year)
+    compute_parcel_statistics(data_dir, year)
 
     # and put them together
-    # get_parcel_statistics(data_dir, year)
+    get_parcel_statistics(data_dir, year)
 
     # compare PlanetScope 4 and 8 band LAI retrievals
     fpath_planetscope = Path('data/planetscope/2022/parcel_statistics.gpkg')
