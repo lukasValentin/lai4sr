@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 import warnings
 
 from eodal.core.raster import RasterCollection
@@ -30,6 +31,7 @@ from functools import wraps
 from pathlib import Path
 
 warnings.filterwarnings('ignore')
+common_crs = 'EPSG:2056'
 
 
 def masked_array_to_ndarray(func):
@@ -75,7 +77,7 @@ def entropy(x: np.ma.MaskedArray) -> float:
     return -np.sum(p * np.log(p))
 
 
-def parcel_statistics(
+def compute_parcel_statistics(
         data_dir: Path,
         year: int
 ) -> None:
@@ -92,6 +94,10 @@ def parcel_statistics(
     """
     # loop over directories in sat_data_dir
     for sat_dir in data_dir.iterdir():
+        platform = sat_dir.name
+        # TODO: remove this
+        if platform != 'planetscope':
+            continue
         sat_dir_year = sat_dir / str(year)
         if not sat_dir_year.exists():
             continue
@@ -105,8 +111,9 @@ def parcel_statistics(
             # loop over lai files
             for fpath_lai in lai_dir.glob('*.tif'):
                 # get the parcel polygons
+                scene = fpath_lai.stem.split('_lai')[0]
                 fpath_parcels = parcels_dir.joinpath(
-                    fpath_lai.stem.replace('_lai', '.gpkg'))
+                    scene + '.gpkg')
                 if not fpath_parcels.exists():
                     continue
                 gdf = gpd.read_file(fpath_parcels)
@@ -138,9 +145,60 @@ def parcel_statistics(
                     continue
 
 
+def analyze_parcel_statistics(
+        data_dir: Path,
+        year: int
+):
+    """
+    Analyze the parcel statistics.
+
+    Parameters
+    ----------
+    data_dir : Path
+        Path to the directory with the satellite data.
+    year : int
+        Year of the satellite data.
+    """
+    # loop over directories in sat_data_dir
+    for sat_dir in data_dir.iterdir():
+        platform = sat_dir.name
+        sat_dir_year = sat_dir / str(year)
+        if not sat_dir_year.exists():
+            continue
+        # loop over months
+        platform_stats_list = []
+        for month_dir in sat_dir_year.iterdir():
+            # loop over statistics files
+            for fpath_stats in month_dir.joinpath('lai').glob('*_parcel_stats.gpkg'):
+                # configuration of the LAI retrieval
+                config = fpath_stats.stem.split('_')[2]
+                # read the statistics
+                gdf_stats = gpd.read_file(fpath_stats)
+                # drop NaN values, i.e., where count is 0
+                gdf_stats = gdf_stats[gdf_stats['count'] > 0].copy()
+                gdf_stats['scene'] = fpath_stats.stem.split('_')[0]
+                gdf_stats['platform'] = platform
+                gdf_stats['month'] = month_dir.name
+                gdf_stats['config'] = config
+                gdf_stats.to_crs(common_crs, inplace=True)
+                platform_stats_list.append(gdf_stats)
+
+        # concatenate the statistics
+        platform_stats = gpd.GeoDataFrame(
+            pd.concat(platform_stats_list, ignore_index=True),
+            geometry='geometry', crs=gdf_stats.crs)
+        # save as GeoPackage
+        fpath_stats = sat_dir_year.joinpath(
+            'parcel_statistics.gpkg')
+        platform_stats.to_file(fpath_stats, driver='GPKG')
+
+        print(f'Platform: {platform} ({year}) --> done')
+
+
 if __name__ == '__main__':
 
     year = 2022
     data_dir = Path('data')
 
-    parcel_statistics(data_dir, year)
+    # compute_parcel_statistics(data_dir, year)
+    analyze_parcel_statistics(data_dir, year)

@@ -1,9 +1,0 @@
-eodal
-numba
-scipy
-lhsmdu
-numpy
-pandas
-spectral
-prosail
-SPART-python

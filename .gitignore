@@ -168,3 +168,4 @@ lai_retrieval_sentinel2.sh
 analysis/
 prepare_field_polygons.sh
 parcel_statistics.sh
+scripts/rename_ps_lai.py
