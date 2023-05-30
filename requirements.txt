@@ -1,0 +1,6 @@
+eodal
+scipy
+lhsmdu
+spectral
+SPART-python
+prosail
