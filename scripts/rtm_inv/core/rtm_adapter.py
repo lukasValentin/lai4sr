@@ -256,7 +256,7 @@ class RTM:
                 valid = green_is_valid(wvls=centers_prosail, spectrum=spectrum)
                 # set invalid spectra to NaN (so they can be filtered out) and continue
                 if not valid:
-                    self._lut.samples.at[idx,sensor_bands] = np.nan
+                    self._lut.samples.loc[idx,sensor_bands] = np.nan
                     continue
 
             # resample to the spectral resolution of sensor
@@ -272,7 +272,7 @@ class RTM:
                 )
                 sensor_spectrum = sensor_spectrum[0].values
 
-            self._lut.samples.at[idx,sensor_bands] = sensor_spectrum
+            self._lut.samples.loc[idx,sensor_bands] = sensor_spectrum
 
     def simulate_spectra(self, sensor: str, **kwargs) -> pd.DataFrame:
         """
