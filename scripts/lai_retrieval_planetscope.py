@@ -42,7 +42,7 @@ ps_8bands = {
     'B4': 'green',
     'B5': 'yellow',
     'B6': 'red',
-    'B7': 'red_edge',
+    'B7': 'rededge',
     'B8': 'nir'}
 # 4 bands compatabile with Sentinel-2 10 m bands
 ps_4bands = {
