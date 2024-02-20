@@ -153,7 +153,8 @@ class LookupTable(object):
             # trait values scaled between their specific min and max
             for trait_name in trait_names:
                 traits_lhc[trait_name] = traits_lhc[trait_name] * \
-                    traits[trait_name]['Max'] + traits[trait_name]['Min']
+                    (traits[trait_name]['Max'] - traits[trait_name]['Min']) + \
+                    traits[trait_name]['Min']
             sample_traits = traits_lhc
         elif method.upper() == 'FRS':
             # fully random sampling within the trait ranges specified
